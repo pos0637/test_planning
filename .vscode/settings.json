@@ -61,6 +61,7 @@
         "string": "cpp",
         "string_view": "cpp",
         "hash_map": "cpp",
-        "valarray": "cpp"
+        "valarray": "cpp",
+        "eigen": "cpp"
     }
 }

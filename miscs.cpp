@@ -1,5 +1,6 @@
 ﻿#include <iostream>
 #include <string>
+#include <pcl/kdtree/kdtree_flann.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include "eulerAngle.h"
@@ -264,4 +265,108 @@ void SavePointNormals2(const std::string &name, pcl::PointCloud<PointT>::Ptr clo
     }
 
     file.close();
+}
+
+/**
+ * @brief 匹配候选点云
+ * 
+ * @param cloud 点云
+ * @param normals 法线
+ * @param candidate 候选点云
+ * @return std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> 匹配候选点云, 匹配候选法线
+ */
+std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> MatchCandidateCloud(pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, pcl::PointCloud<PointT>::Ptr candidate)
+{
+    pcl::KdTreeFLANN<PointT> tree;
+    tree.setInputCloud(cloud);
+
+    std::vector<int> index(1);
+    std::vector<float> distance(1);
+    pcl::PointCloud<PointT>::Ptr c(new pcl::PointCloud<PointT>());
+    pcl::PointCloud<pcl::Normal>::Ptr n(new pcl::PointCloud<pcl::Normal>());
+    for (PointT point : *candidate)
+    {
+        if (tree.nearestKSearch(point, 1, index, distance) > 0)
+        {
+            c->push_back(cloud->points[index[0]]);
+            if (normals != NULL)
+            {
+                n->push_back(normals->points[index[0]]);
+            }
+        }
+    }
+
+    return std::make_tuple(c, n);
+}
+
+/**
+ * @brief 点云投影排序
+ * 
+ * @param cloud 点云
+ * @param normals 法线
+ * @param obb 最小包围盒
+ * @param axis 主轴
+ * @return std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr>  点云, 法线
+ */
+std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> Sort(pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, const OBB &obb, const std::string &axis)
+{
+    struct PointInfo
+    {
+        int id;
+        double angle;
+
+        PointInfo(int id, double angle)
+        {
+            this->id = id;
+            this->angle = angle;
+        }
+    };
+
+    pcl::PointXYZ center = obb.center;
+    std::vector<PointInfo> info;
+
+    if (axis == "z")
+    {
+        for (int i = 0; i < cloud->points.size(); ++i)
+        {
+            PointT point = cloud->points[i];
+            double angle = std::atan2(point.y - center.y, point.x - center.x) * 180.0 / M_PI;
+            info.push_back(PointInfo(i, angle));
+        }
+    }
+    else if (axis == "y")
+    {
+        for (int i = 0; i < cloud->points.size(); ++i)
+        {
+            PointT point = cloud->points[i];
+            double angle = std::atan2(point.x - center.x, point.z - center.z) * 180.0 / M_PI;
+            info.push_back(PointInfo(i, angle));
+        }
+    }
+    else if (axis == "x")
+    {
+        for (int i = 0; i < cloud->points.size(); ++i)
+        {
+            PointT point = cloud->points[i];
+            double angle = std::atan2(point.z - center.z, point.y - center.y) * 180.0 / M_PI;
+            info.push_back(PointInfo(i, angle));
+        }
+    }
+
+    std::sort(info.begin(), info.end(), [](const PointInfo &i1, const PointInfo &i2) {
+        return i1.angle > i2.angle;
+    });
+
+    pcl::PointCloud<PointT>::Ptr c(new pcl::PointCloud<PointT>());
+    pcl::PointCloud<pcl::Normal>::Ptr n(new pcl::PointCloud<pcl::Normal>());
+    for (int i = 0; i < info.size(); ++i)
+    {
+        c->push_back(cloud->points[info[i].id]);
+        if (normals != NULL)
+        {
+            n->push_back(normals->points[info[i].id]);
+        }
+    }
+
+    return std::make_tuple(c, n);
 }

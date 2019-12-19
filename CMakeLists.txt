@@ -14,6 +14,6 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 link_directories(${OpenCV_LIBRARY_DIRS})
 add_definitions(${OpenCV_DEFINITIONS})
 
-add_executable (${PROJECT_NAME} planning.cpp roi.cpp filter.cpp obb.cpp edge.cpp edge2d.cpp resampling.cpp reconstruct.cpp eulerAngle.cpp miscs.cpp python_bridge.cpp)
+add_executable (${PROJECT_NAME} planning.cpp roi.cpp filter.cpp obb.cpp edge.cpp edge2d.cpp resampling.cpp reconstruct.cpp eulerAngle.cpp zoom.cpp miscs.cpp python_bridge.cpp)
 target_link_libraries (${PROJECT_NAME} ${PCL_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
