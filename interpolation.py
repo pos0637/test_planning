@@ -67,7 +67,7 @@ def write_file(name, x, y):
         file.close()
 
 
-def compute_bspline(x, y, s=100):
+def compute_bspline(x, y, s=200):
     """
     计算B样条曲线
 
@@ -78,12 +78,12 @@ def compute_bspline(x, y, s=100):
     Returns:
         [array, array] -- [X坐标集合, Y坐标集合]
     """
-    tck, u = interpolate.splprep([x, y], s=100, per=1)
-    u_new = np.linspace(u.min(), u.max(), num=(x.max() - x.min()) * 2)
+    tck, u = interpolate.splprep([x, y], s=s, per=1)
+    u_new = np.linspace(u.min(), u.max(), num=(x.max() - x.min()))
     return interpolate.splev(u_new, tck, der=0)
 
 
-def compute_bspline_derivatives(x, y):
+def compute_bspline_derivatives(x, y, s=200):
     """
     计算B样条曲线一阶导数
 
@@ -94,8 +94,8 @@ def compute_bspline_derivatives(x, y):
     Returns:
         [array, array] -- [X坐标集合, Y坐标集合]
     """
-    tck, u = interpolate.splprep([x, y], s=100, per=1)
-    u_new = np.linspace(u.min(), u.max(), num=(x.max() - x.min()) * 2)
+    tck, u = interpolate.splprep([x, y], s=s, per=1)
+    u_new = np.linspace(u.min(), u.max(), num=(x.max() - x.min()))
     return interpolate.splev(u_new, tck, der=1)
 
 
@@ -288,11 +288,11 @@ def compute_inlier_contour3(x, y, min, max, deviation, image):
 
 
 def execute():
-    image = read_image('contours.yml')
-    x, y = read_file('contours.txt')
+    image = read_image('./output/contours.yml')
+    x, y = read_file('./output/contours.txt')
     x_new, y_new = compute_bspline(x, y)
     x_inlier, y_inlier, x_middle, y_middle = compute_inlier_contour3(
         x, y, 5, 30, 0.5, image)
     x_middle, y_middle = compute_bspline(
         np.array(x_middle), np.array(y_middle))
-    write_file('inlier_contours.txt', x_middle, y_middle)
+    write_file('./output/inlier_contours.txt', x_middle, y_middle)

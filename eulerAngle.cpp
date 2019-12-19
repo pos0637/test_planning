@@ -110,7 +110,7 @@ Eigen::Vector3f ComputeEulerAngle(const Eigen::Vector3f &z, const pcl::Normal &n
     // 统一向量方向
     if (normal.normal_z > 0)
     {
-        // v2 *= -1;
+        v2 *= -1;
     }
 
     return ComputeEulerAngle2(z, v2);
@@ -129,7 +129,7 @@ Eigen::Quaternionf ComputeQuaternion(const Eigen::Vector3f &z, const pcl::Normal
     // 统一向量方向
     if (normal.normal_z > 0)
     {
-        // v2 *= -1;
+        v2 *= -1;
     }
 
     return Eigen::Quaternionf::FromTwoVectors(z, v2);

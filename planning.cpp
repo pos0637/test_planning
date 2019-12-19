@@ -88,8 +88,8 @@ void test()
 #endif
 
     // 保存点云
-    SavePointNormals("points.txt", edge, normals, inliersOBB);
-    SavePointNormals2("points2.txt", edge, normals, inliersOBB);
+    SavePointNormals("./output/points.txt", edge, normals, inliersOBB);
+    SavePointNormals2("./output/points2.txt", edge, normals, inliersOBB);
     // 生成KUKA代码
     Invoke("generate_kuka_code", "execute");
 

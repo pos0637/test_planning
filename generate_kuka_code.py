@@ -132,19 +132,19 @@ def write_dat_tail(file):
 
 
 def execute():
-    reader = csv.reader(open('points.txt'))
+    reader = csv.reader(open('./output/points.txt'))
     rows = []
     for row in reader:
         rows.append(row)
         print(row)
 
-    file = open('demo.src', 'w')
+    file = open('./output/demo.src', 'w')
     write_src_header(file)
     write_src_data(file, rows)
     write_src_tail(file)
     file.close()
 
-    file = open('demo.dat', 'w')
+    file = open('./output/demo.dat', 'w')
     write_dat_header(file)
     write_dat_data(file, rows)
     write_dat_tail(file)

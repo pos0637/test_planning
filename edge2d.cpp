@@ -312,11 +312,11 @@ pcl::PointCloud<PointT>::Ptr EdgeDetect2D(pcl::PointCloud<PointT>::Ptr cloud, co
     std::vector<cv::Vec4i> hierarchy;
     cv::findContours(normalize, contours, hierarchy, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
 
-    SaveImage("contours.yml", image);
-    SaveImage("k.yml", ComputeK(image));
-    SaveContours("contours.txt", contours);
+    SaveImage("./output/contours.yml", image);
+    SaveImage("./output/k.yml", ComputeK(image));
+    SaveContours("./output/contours.txt", contours);
     Invoke("interpolation", "execute");
-    contours = LoadContours("inlier_contours.txt");
+    contours = LoadContours("./output/inlier_contours.txt");
 
 #ifndef _DEBUG
     ShowContours("contours", image.cols, image.rows, contours);
