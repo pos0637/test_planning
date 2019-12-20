@@ -89,7 +89,12 @@ Eigen::Vector3f ComputeEulerAngle(const cv::Mat &R)
  */
 Eigen::Vector3f ComputeEulerAngle2(const Eigen::Vector3f &v1, const Eigen::Vector3f &v2)
 {
-    Eigen::Vector3f angles = Eigen::Quaternionf::FromTwoVectors(v1, v2).toRotationMatrix().eulerAngles(2, 1, 0);
+    Eigen::AngleAxisf rotationVector(90 * 180 / CV_PI, Eigen::Vector3f(0, 0, 1).normalized());
+    Eigen::Quaternionf quat1(rotationVector);
+    Eigen::Quaternionf quat2 = Eigen::Quaternionf::FromTwoVectors(v1, v2);
+    
+    // Eigen::Vector3f angles = (quat2 * quat1).toRotationMatrix().eulerAngles(2, 1, 0);
+    Eigen::Vector3f angles = quat2.toRotationMatrix().eulerAngles(2, 1, 0);
     angles[0] = angles[0] * 180 / CV_PI;
     angles[1] = angles[1] * 180 / CV_PI;
     angles[2] = angles[2] * 180 / CV_PI;
@@ -140,6 +145,13 @@ void test1()
     Eigen::Vector3f v1(0, 0, 1);
     Eigen::Vector3f v2(-28.53 - 42.50, 207.93 - 189.38, 0);
 
-    Eigen::Vector3f angles = ComputeEulerAngle2(v1, v2);
+    Eigen::AngleAxisf rotationVector(90 * 180 / CV_PI, Eigen::Vector3f(0, 0, 1).normalized());
+    Eigen::Quaternionf quat1(rotationVector);
+    Eigen::Quaternionf quat2 = Eigen::Quaternionf::FromTwoVectors(v1, v2);
+    Eigen::Vector3f angles = (quat1 * quat2).toRotationMatrix().eulerAngles(2, 1, 0);
+    angles[0] = angles[0] * 180 / CV_PI;
+    angles[1] = angles[1] * 180 / CV_PI;
+    angles[2] = angles[2] * 180 / CV_PI;
+
     printf(">>>>>>>>> angles: %f, %f, %f\n", angles(0), angles(1), angles(2));
 }
