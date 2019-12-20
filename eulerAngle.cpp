@@ -92,7 +92,7 @@ Eigen::Vector3f ComputeEulerAngle2(const Eigen::Vector3f &v1, const Eigen::Vecto
     Eigen::AngleAxisf rotationVector(90 * 180 / CV_PI, Eigen::Vector3f(0, 0, 1).normalized());
     Eigen::Quaternionf quat1(rotationVector);
     Eigen::Quaternionf quat2 = Eigen::Quaternionf::FromTwoVectors(v1, v2);
-    
+
     // Eigen::Vector3f angles = (quat2 * quat1).toRotationMatrix().eulerAngles(2, 1, 0);
     Eigen::Vector3f angles = quat2.toRotationMatrix().eulerAngles(2, 1, 0);
     angles[0] = angles[0] * 180 / CV_PI;
@@ -138,6 +138,42 @@ Eigen::Quaternionf ComputeQuaternion(const Eigen::Vector3f &z, const pcl::Normal
     }
 
     return Eigen::Quaternionf::FromTwoVectors(z, v2);
+}
+
+/**
+ * @brief 计算固定XY轴方向的四元数
+ * 
+ * @param normal 法线
+ * @return Eigen::Quaternionf 四元数
+ */
+Eigen::Quaternionf ComputeFixedQuaternion(const pcl::Normal &normal)
+{
+    Eigen::Vector3f vx(0, 0, 0);
+    Eigen::Vector3f vy(0, 0, 0);
+    Eigen::Vector3f vz(normal.normal_x, normal.normal_y, normal.normal_z);
+    Eigen::Vector3f v(normal.normal_x, normal.normal_y, 0);
+
+    vz = vz.normalized();
+    v = v.normalized();
+    if ((std::fabs(v[0]) > FLT_EPSILON) && (std::fabs(v[1]) > FLT_EPSILON))
+    {
+        vy = Eigen::Vector3f(-v[1] / v[0], 1.0f, 0.0f).normalized();
+    }
+    else if ((std::fabs(v[0]) < FLT_EPSILON) && (std::fabs(v[1]) > FLT_EPSILON))
+    {
+        vy = Eigen::Vector3f(1.0f, -v[0] / v[1], 0.0f).normalized();
+    }
+    else if ((std::fabs(v[0]) > FLT_EPSILON) && (std::fabs(v[1]) < FLT_EPSILON))
+    {
+        vy = Eigen::Vector3f(-v[1] / v[0], 1.0f, 0.0f).normalized();
+    }
+
+    vx = vy.cross(vz).normalized();
+
+    Eigen::Matrix3f rotationMatrix;
+    rotationMatrix << vx[0], vx[1], vx[2], vy[0], vy[1], vy[2], vz[0], vz[1], vz[2];
+
+    return Eigen::Quaternionf(rotationMatrix);
 }
 
 void test1()

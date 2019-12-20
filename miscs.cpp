@@ -259,7 +259,7 @@ void SavePointNormals2(const std::string &name, pcl::PointCloud<PointT>::Ptr clo
     for (int i = 0; i < cloud->points.size(); ++i)
     {
         PointT point = cloud->points[i];
-        Eigen::Quaternionf quat = ComputeQuaternion(obb.minorVector, normals->points[i]);
+        Eigen::Quaternionf quat = ComputeFixedQuaternion(normals->points[i]);
         sprintf(buffer, "%f, %f, %f, %f, %f, %f, %f", point.x, point.y, point.z, quat.x(), quat.y(), quat.z(), quat.w());
         file << buffer << endl;
     }
