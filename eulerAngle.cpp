@@ -4,6 +4,22 @@
 #include "eulerAngle.h"
 
 /**
+ * @brief 获取四元数
+ * 
+ * @param transformMatrix 变换矩阵
+ * @return Eigen::Quaternionf 四元数
+ */
+Eigen::Quaternionf GetQuaternion(const Eigen::Matrix4f &transformMatrix)
+{
+    Eigen::Matrix3f rotationMatrix;
+    rotationMatrix << transformMatrix(0, 0), transformMatrix(0, 1), transformMatrix(0, 2),
+        transformMatrix(1, 1), transformMatrix(1, 1), transformMatrix(1, 2),
+        transformMatrix(2, 0), transformMatrix(2, 1), transformMatrix(2, 2);
+
+    return Eigen::Quaternionf(rotationMatrix);
+}
+
+/**
  * @brief 计算向量夹角
  * 
  * @param v1 向量
@@ -211,7 +227,8 @@ Eigen::Quaternionf ComputeFixedQuaternion(const pcl::Normal &normal)
     Eigen::Vector3f vy(vy2[0], vy2[1], 0.0f);
     Eigen::Vector3f vz(normal.normal_x, normal.normal_y, normal.normal_z);
 
-    vz = vz.normalized();
+    // 根据工具实际姿态调整轴方向
+    vz = vz.normalized() * -1;
     vy = vy.normalized();
     vx = vy.cross(vz).normalized();
 
@@ -220,66 +237,4 @@ Eigen::Quaternionf ComputeFixedQuaternion(const pcl::Normal &normal)
     rotationMatrix << vx[0], vy[0], vz[0], vx[1], vy[1], vz[1], vx[2], vy[2], vz[2];
 
     return Eigen::Quaternionf(rotationMatrix);
-}
-
-/**
- * @brief 计算固定XY轴方向的法线
- * 
- * @param normal 法线
- * @return pcl::Normal 法线
- */
-pcl::Normal ComputeFixedNormal(const pcl::Normal &normal)
-{
-    Eigen::Vector2f vy(0.0f, 0.0f);
-    Eigen::Vector2f v(normal.normal_x, normal.normal_y);
-
-    // 计算固定XY轴方向的垂直法线
-    v = v.normalized();
-    if ((std::fabs(v[0]) > FLT_EPSILON) && (std::fabs(v[1]) > FLT_EPSILON))
-    {
-        vy = Eigen::Vector2f(-v[1] / v[0], 1.0f).normalized();
-    }
-    else if ((std::fabs(v[0]) < FLT_EPSILON) && (std::fabs(v[1]) > FLT_EPSILON))
-    {
-        vy = Eigen::Vector2f(1.0f, -v[0] / v[1]).normalized();
-    }
-    else if ((std::fabs(v[0]) > FLT_EPSILON) && (std::fabs(v[1]) < FLT_EPSILON))
-    {
-        vy = Eigen::Vector2f(-v[1] / v[0], 1.0f).normalized();
-    }
-
-    // 修正法线方向与坐标系平行且同向
-    if ((v[0] > FLT_EPSILON) && (v[1] > FLT_EPSILON))
-    {
-        if (vy[0] < FLT_EPSILON)
-        {
-            vy *= -1;
-        }
-    }
-    else if ((v[0] < FLT_EPSILON) && (v[1] > FLT_EPSILON))
-    {
-        if (vy[0] < FLT_EPSILON)
-        {
-            vy *= -1;
-        }
-    }
-    else if ((v[0] < FLT_EPSILON) && (v[1] < FLT_EPSILON))
-    {
-        if (vy[0] > FLT_EPSILON)
-        {
-            vy *= -1;
-        }
-    }
-    else if ((v[0] > FLT_EPSILON) && (v[1] < FLT_EPSILON))
-    {
-        if (vy[0] > FLT_EPSILON)
-        {
-            vy *= -1;
-        }
-    }
-
-    printf(">>>>>>>>>>> angle: %f\n", std::acos(vy.dot(v)) * 180 / CV_PI);
-
-    Eigen::Vector3f result = Eigen::Vector3f(vy[0], vy[1], 0.0f).normalized();
-    return pcl::Normal(result[0], result[1], result[2]);
 }

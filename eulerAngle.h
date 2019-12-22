@@ -5,6 +5,14 @@
 #include <pcl/point_types.h>
 
 /**
+ * @brief 获取四元数
+ * 
+ * @param transformMatrix 变换矩阵
+ * @return Eigen::Quaternionf 四元数
+ */
+Eigen::Quaternionf GetQuaternion(const Eigen::Matrix4f &transformMatrix);
+
+/**
  * @brief 计算欧拉角
  * 
  * @param z Z轴向量
