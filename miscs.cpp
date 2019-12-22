@@ -1,6 +1,7 @@
 ﻿#include <iostream>
 #include <string>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/common/transforms.h>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 #include "eulerAngle.h"
@@ -215,9 +216,8 @@ void SaveImageValue(const std::string &name, const cv::Mat &image)
  * @param name 名称
  * @param cloud 点云
  * @param normals 法线
- * @param obb 最小包围盒
  */
-void SavePointNormals(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, const OBB &obb)
+void SavePointNormals(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals)
 {
     std::ofstream file(name, std::ios::out);
     if (!file)
@@ -240,14 +240,42 @@ void SavePointNormals(const std::string &name, pcl::PointCloud<PointT>::Ptr clou
 }
 
 /**
+ * @brief 保存点云(欧拉角版本)
+ * 
+ * @param name 名称
+ * @param cloud 点云
+ * @param quaternions 四元数
+ */
+void SavePointNormals(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, std::vector<Eigen::Quaternionf> quaternions)
+{
+    std::ofstream file(name, std::ios::out);
+    if (!file)
+    {
+        return;
+    }
+
+    char buffer[256];
+    int s = 2;
+    int t = 34;
+    for (int i = 0; i < cloud->points.size(); ++i)
+    {
+        PointT point = cloud->points[i];
+        Eigen::Vector3f angle = ComputeFixedEulerAngle(quaternions[i]);
+        sprintf(buffer, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %d, %d", point.x, point.y, point.z, angle[0], angle[1], angle[2], s, t);
+        file << buffer << endl;
+    }
+
+    file.close();
+}
+
+/**
  * @brief 保存点云(四元数版本)
  * 
  * @param name 名称
  * @param cloud 点云
  * @param normals 法线
- * @param obb 最小包围盒
  */
-void SavePointNormals2(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, const OBB &obb)
+void SavePointNormals2(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals)
 {
     std::ofstream file(name, std::ios::out);
     if (!file)
@@ -260,6 +288,33 @@ void SavePointNormals2(const std::string &name, pcl::PointCloud<PointT>::Ptr clo
     {
         PointT point = cloud->points[i];
         Eigen::Quaternionf quat = ComputeFixedQuaternion(normals->points[i]);
+        sprintf(buffer, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f", point.x, point.y, point.z, quat.x(), quat.y(), quat.z(), quat.w());
+        file << buffer << endl;
+    }
+
+    file.close();
+}
+
+/**
+ * @brief 保存点云(四元数版本)
+ * 
+ * @param name 名称
+ * @param cloud 点云
+ * @param normals 法线
+ */
+void SavePointNormals2(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, std::vector<Eigen::Quaternionf> quaternions)
+{
+    std::ofstream file(name, std::ios::out);
+    if (!file)
+    {
+        return;
+    }
+
+    char buffer[256];
+    for (int i = 0; i < cloud->points.size(); ++i)
+    {
+        PointT point = cloud->points[i];
+        Eigen::Quaternionf quat = quaternions[i];
         sprintf(buffer, "%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f", point.x, point.y, point.z, quat.x(), quat.y(), quat.z(), quat.w());
         file << buffer << endl;
     }
@@ -367,6 +422,28 @@ std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> Sort
             n->push_back(normals->points[info[i].id]);
         }
     }
+
+    return std::make_tuple(c, n);
+}
+
+/**
+ * @brief 变换点云与法线
+ * 
+ * @param cloud 点云
+ * @param normals 法线
+ * @param transformMatrix 变换矩阵
+ * @return std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> 点云, 法线
+ */
+std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> TransformPointCloud(pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, const Eigen::Matrix4f &transformMatrix)
+{
+    pcl::PointCloud<pcl::PointNormal>::Ptr pointNormals(new pcl::PointCloud<pcl::PointNormal>());
+    pcl::concatenateFields(*cloud, *normals, *pointNormals);
+    pcl::transformPointCloudWithNormals(*pointNormals, *pointNormals, transformMatrix);
+
+    pcl::PointCloud<PointT>::Ptr c(new pcl::PointCloud<PointT>());
+    pcl::PointCloud<pcl::Normal>::Ptr n(new pcl::PointCloud<pcl::Normal>);
+    pcl::copyPointCloud(*pointNormals, *n);
+    pcl::transformPointCloud(*cloud, *c, transformMatrix);
 
     return std::make_tuple(c, n);
 }

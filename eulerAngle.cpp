@@ -13,7 +13,7 @@ Eigen::Quaternionf GetQuaternion(const Eigen::Matrix4f &transformMatrix)
 {
     Eigen::Matrix3f rotationMatrix;
     rotationMatrix << transformMatrix(0, 0), transformMatrix(0, 1), transformMatrix(0, 2),
-        transformMatrix(1, 1), transformMatrix(1, 1), transformMatrix(1, 2),
+        transformMatrix(1, 0), transformMatrix(1, 1), transformMatrix(1, 2),
         transformMatrix(2, 0), transformMatrix(2, 1), transformMatrix(2, 2);
 
     return Eigen::Quaternionf(rotationMatrix);
@@ -154,17 +154,28 @@ Eigen::Quaternionf ComputeQuaternion(const Eigen::Vector3f &z, const pcl::Normal
 /**
  * @brief 计算固定XY轴方向的欧拉角
  * 
- * @param normal 法线
+ * @param quaternion 四元数
  * @return Eigen::Vector3f 欧拉角
  */
-Eigen::Vector3f ComputeFixedEulerAngle(const pcl::Normal &normal)
+Eigen::Vector3f ComputeFixedEulerAngle(const Eigen::Quaternionf &quaternion)
 {
-    Eigen::Vector3f angles = ComputeFixedQuaternion(normal).toRotationMatrix().eulerAngles(2, 1, 0);
+    Eigen::Vector3f angles = quaternion.toRotationMatrix().eulerAngles(2, 1, 0);
     angles[0] = angles[0] * 180 / CV_PI;
     angles[1] = angles[1] * 180 / CV_PI;
     angles[2] = angles[2] * 180 / CV_PI;
 
     return Eigen::Vector3f(angles[0], angles[1], angles[2]);
+}
+
+/**
+ * @brief 计算固定XY轴方向的欧拉角
+ * 
+ * @param normal 法线
+ * @return Eigen::Vector3f 欧拉角
+ */
+Eigen::Vector3f ComputeFixedEulerAngle(const pcl::Normal &normal)
+{
+    return ComputeFixedEulerAngle(ComputeFixedQuaternion(normal));
 }
 
 /**
@@ -233,8 +244,43 @@ Eigen::Quaternionf ComputeFixedQuaternion(const pcl::Normal &normal)
     vx = vy.cross(vz).normalized();
 
     Eigen::Matrix3f rotationMatrix;
-    // rotationMatrix << vx[0], vx[1], vx[2], vy[0], vy[1], vy[2], vz[0], vz[1], vz[2];
     rotationMatrix << vx[0], vy[0], vz[0], vx[1], vy[1], vz[1], vx[2], vy[2], vz[2];
 
     return Eigen::Quaternionf(rotationMatrix);
+}
+
+/**
+ * @brief 计算固定XY轴方向的四元数
+ * 
+ * @param normals 法线
+ * @return std::vector<Eigen::Quaternionf> 四元数
+ */
+std::vector<Eigen::Quaternionf> ComputeFixedQuaternions(pcl::PointCloud<pcl::Normal>::Ptr normals)
+{
+    std::vector<Eigen::Quaternionf> result;
+    for (pcl::Normal normal : *normals)
+    {
+        result.push_back(ComputeFixedQuaternion(normal));
+    }
+
+    return result;
+}
+
+/**
+ * @brief 变换四元数
+ * 
+ * @param quaternions 四元数
+ * @param transformMatrix 变换矩阵
+ * @return std::vector<Eigen::Quaternionf> 四元数
+ */
+std::vector<Eigen::Quaternionf> TransformQuaternions(const std::vector<Eigen::Quaternionf> &quaternions, const Eigen::Matrix4f &transformMatrix)
+{
+    std::vector<Eigen::Quaternionf> result;
+    Eigen::Quaternionf transformQuat = GetQuaternion(transformMatrix);
+    for (Eigen::Quaternionf quat : quaternions)
+    {
+        result.push_back(transformQuat * quat);
+    }
+
+    return result;
 }

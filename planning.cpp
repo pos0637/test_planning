@@ -1,14 +1,15 @@
-﻿#include <pcl/common/transforms.h>
-#include <pcl/io/pcd_io.h>
+﻿#include <pcl/io/pcd_io.h>
+#include <pcl/common/transforms.h>
 #include <iostream>
 #include "common.h"
 #include "edge.h"
 #include "edge2d.h"
 #include "filter.h"
-#include "miscs.h"
 #include "obb.h"
 #include "roi.h"
 #include "zoom.h"
+#include "eulerAngle.h"
+#include "miscs.h"
 #include "python_bridge.h"
 
 void test()
@@ -49,6 +50,9 @@ void test()
     // 点云排序
     std::tie(edge2, normals2) = Sort(edge2, normals2, rotatedOBB, "z");
 
+    // 计算姿态
+    std::vector<Eigen::Quaternionf> quaternions = ComputeFixedQuaternions(normals2);
+
     // 绘制点云
     pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("boundary"));
     DrawCoordinateSystemAxis(viewer);
@@ -64,17 +68,10 @@ void test()
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "edge2");
     DrawOBB(viewer, rotatedOBB, "rotated");
 #else
-    pcl::PointCloud<pcl::PointNormal>::Ptr pointNormals(new pcl::PointCloud<pcl::PointNormal>());
-    pcl::concatenateFields(*edge, *normals, *pointNormals);
-    pcl::transformPointCloudWithNormals(*pointNormals, *pointNormals, inliersOBB.inverseTransformMatrix);
-    pcl::copyPointCloud(*pointNormals, *normals);
-    pcl::transformPointCloud(*edge, *edge, inliersOBB.inverseTransformMatrix);
-
-    pcl::PointCloud<pcl::PointNormal>::Ptr pointNormals2(new pcl::PointCloud<pcl::PointNormal>());
-    pcl::concatenateFields(*edge2, *normals2, *pointNormals2);
-    pcl::transformPointCloudWithNormals(*pointNormals2, *pointNormals2, inliersOBB.inverseTransformMatrix);
-    pcl::copyPointCloud(*pointNormals2, *normals2);
-    pcl::transformPointCloud(*edge2, *edge2, inliersOBB.inverseTransformMatrix);
+    // 变换点云与法线
+    std::tie(edge, normals) = TransformPointCloud(edge, normals, inliersOBB.inverseTransformMatrix);
+    std::tie(edge2, normals2) = TransformPointCloud(edge2, normals2, inliersOBB.inverseTransformMatrix);
+    quaternions = TransformQuaternions(quaternions, inliersOBB.inverseTransformMatrix);
 
     viewer->addPointCloud<PointT>(inliers, "inliers");
     viewer->addPointCloud<PointT>(edge, "edge");
@@ -88,8 +85,8 @@ void test()
 #endif
 
     // 保存点云
-    SavePointNormals("./output/points.txt", edge, normals2, inliersOBB);
-    SavePointNormals2("./output/points2.txt", edge, normals2, inliersOBB);
+    SavePointNormals("./output/points.txt", edge, quaternions);
+    SavePointNormals2("./output/points2.txt", edge, quaternions);
     // 生成KUKA代码
     Invoke("generate_kuka_code", "execute");
 

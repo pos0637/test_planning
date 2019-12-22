@@ -136,7 +136,6 @@ def execute():
     rows = []
     for row in reader:
         rows.append(row)
-        print(row)
 
     file = open('./output/demo.src', 'w')
     write_src_header(file)

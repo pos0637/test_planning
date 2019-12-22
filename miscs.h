@@ -106,7 +106,16 @@ void SaveImageValue(const std::string &name, const cv::Mat &image);
  * @param normals 法线
  * @param obb 最小包围盒
  */
-void SavePointNormals(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, const OBB &obb);
+void SavePointNormals(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals);
+
+/**
+ * @brief 保存点云(欧拉角版本)
+ * 
+ * @param name 名称
+ * @param cloud 点云
+ * @param quaternions 四元数
+ */
+void SavePointNormals(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, std::vector<Eigen::Quaternionf> quaternions);
 
 /**
  * @brief 保存点云(四元数版本)
@@ -116,7 +125,16 @@ void SavePointNormals(const std::string &name, pcl::PointCloud<PointT>::Ptr clou
  * @param normals 法线
  * @param obb 最小包围盒
  */
-void SavePointNormals2(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, const OBB &obb);
+void SavePointNormals2(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals);
+
+/**
+ * @brief 保存点云(四元数版本)
+ * 
+ * @param name 名称
+ * @param cloud 点云
+ * @param normals 法线
+ */
+void SavePointNormals2(const std::string &name, pcl::PointCloud<PointT>::Ptr cloud, std::vector<Eigen::Quaternionf> quaternions);
 
 /**
  * @brief 匹配候选点云
@@ -138,5 +156,15 @@ std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> Matc
  * @return std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr>  点云, 法线
  */
 std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> Sort(pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, const OBB &obb, const std::string &axis);
+
+/**
+ * @brief 变换点云与法线
+ * 
+ * @param cloud 点云
+ * @param normals 法线
+ * @param transformMatrix 变换矩阵
+ * @return std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> 点云, 法线
+ */
+std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> TransformPointCloud(pcl::PointCloud<PointT>::Ptr cloud, pcl::PointCloud<pcl::Normal>::Ptr normals, const Eigen::Matrix4f & transformMatrix);
 
 #endif // __MISC_H__
