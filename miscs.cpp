@@ -209,6 +209,17 @@ void SaveImageValue(const std::string &name, const cv::Mat &image)
     cv::imwrite(name, result);
 }
 
+pcl::PointCloud<pcl::Normal>::Ptr ComputeFixedNormals(pcl::PointCloud<pcl::Normal>::Ptr normals)
+{
+    pcl::PointCloud<pcl::Normal>::Ptr result(new pcl::PointCloud<pcl::Normal>());
+    for (int i = 0; i < normals->points.size(); ++i)
+    {
+        result->push_back(ComputeFixedNormal(normals->points[i]));
+    }
+
+    return result;
+}
+
 /**
  * @brief 保存点云(欧拉角版本)
  * 
@@ -231,7 +242,7 @@ void SavePointNormals(const std::string &name, pcl::PointCloud<PointT>::Ptr clou
     for (int i = 0; i < cloud->points.size(); ++i)
     {
         PointT point = cloud->points[i];
-        Eigen::Vector3f angle = ComputeEulerAngle(obb.minorVector, normals->points[i]);
+        Eigen::Vector3f angle = ComputeFixedEulerAngle(normals->points[i]);
         sprintf(buffer, "%f, %f, %f, %f, %f, %f, %d, %d", point.x, point.y, point.z, angle[0], angle[1], angle[2], s, t);
         file << buffer << endl;
     }

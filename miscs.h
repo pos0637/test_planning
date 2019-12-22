@@ -98,6 +98,8 @@ void SaveImage(const std::string &name, const cv::Mat& image);
  */
 void SaveImageValue(const std::string &name, const cv::Mat &image);
 
+pcl::PointCloud<pcl::Normal>::Ptr ComputeFixedNormals(pcl::PointCloud<pcl::Normal>::Ptr normals);
+
 /**
  * @brief 保存点云(欧拉角版本)
  * 

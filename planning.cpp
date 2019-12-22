@@ -35,7 +35,7 @@ void test()
     pcl::PointCloud<PointT>::Ptr edge = EdgeDetect2D(roi, rotatedOBB);
 
     // 匹配候选点云
-    std::tie(edge, normals) = MatchCandidateCloud(rotated, normals, edge);    
+    std::tie(edge, normals) = MatchCandidateCloud(rotated, normals, edge);
 
     // 点云排序
     std::tie(edge, normals) = Sort(edge, normals, rotatedOBB, "z");
@@ -46,6 +46,9 @@ void test()
     // std::tie(edge2, normals2) = Shrink(edge, normals, 10.0);
     std::tie(edge2, normals2) = Shrink2D(edge, rotatedOBB, 10.0, 10.0);
 
+    // TODO: delete it
+    pcl::PointCloud<pcl::Normal>::Ptr ny = ComputeFixedNormals(normals2);
+
     // 点云排序
     std::tie(edge2, normals2) = Sort(edge2, normals2, rotatedOBB, "z");
 
@@ -53,13 +56,14 @@ void test()
     pcl::visualization::PCLVisualizer::Ptr viewer(new pcl::visualization::PCLVisualizer("boundary"));
     DrawCoordinateSystemAxis(viewer);
 
-#if 0
+#if 1
     viewer->addPointCloud<PointT>(rotated, "rotated");
-    viewer->addPointCloudNormals<PointT, pcl::Normal>(edge, normals, 1, 20, "normals");
     viewer->addPointCloud<PointT>(edge, "edge");
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "edge");
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "edge");
     viewer->addPointCloud<PointT>(edge2, "edge2");
+    viewer->addPointCloudNormals<PointT, pcl::Normal>(edge2, normals2, 1, 20, "normals");
+    viewer->addPointCloudNormals<PointT, pcl::Normal>(edge2, ny, 1, 20, "normals_y");
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "edge2");
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "edge2");
     DrawOBB(viewer, rotatedOBB, "rotated");
@@ -77,7 +81,7 @@ void test()
     pcl::transformPointCloud(*edge2, *edge2, inliersOBB.inverseTransformMatrix);
 
     viewer->addPointCloud<PointT>(inliers, "inliers");
-    viewer->addPointCloud<PointT>(edge, "edge");    
+    viewer->addPointCloud<PointT>(edge, "edge");
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "edge");
     viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 5, "edge");
     viewer->addPointCloud<PointT>(edge2, "edge2");
@@ -88,8 +92,8 @@ void test()
 #endif
 
     // 保存点云
-    SavePointNormals("./output/points.txt", edge, normals, inliersOBB);
-    SavePointNormals2("./output/points2.txt", edge, normals, inliersOBB);
+    SavePointNormals("./output/points.txt", edge, normals2, inliersOBB);
+    SavePointNormals2("./output/points2.txt", edge, normals2, inliersOBB);
     // 生成KUKA代码
     Invoke("generate_kuka_code", "execute");
 

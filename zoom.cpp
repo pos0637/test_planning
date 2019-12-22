@@ -43,30 +43,40 @@ std::tuple<pcl::PointCloud<PointT>::Ptr, pcl::PointCloud<pcl::Normal>::Ptr> Shri
 
     pcl::PointCloud<PointT>::Ptr c(new pcl::PointCloud<PointT>());
     pcl::PointCloud<pcl::Normal>::Ptr n(new pcl::PointCloud<pcl::Normal>());
-    for (int i = 0; i < cloud->points.size(); ++i) {
+    for (int i = 0; i < cloud->points.size(); ++i)
+    {
         // 获取前后两点
         PointT p = cloud->points[i];
-        PointT p1 = cloud->points[i == 0? cloud->points.size() - 1: i - 1];
-        PointT p2 = cloud->points[i == cloud->points.size() - 1? 0: i + 1];
+        PointT p1 = cloud->points[i == 0 ? cloud->points.size() - 1 : i - 1];
+        PointT p2 = cloud->points[i == cloud->points.size() - 1 ? 0 : i + 1];
 
         // 计算向量方向
         Eigen::Vector2f v1(p1.x - p.x, p1.y - p.y);
         Eigen::Vector2f v2(p2.x - p.x, p2.y - p.y);
         Eigen::Vector2f v = (v1.normalized() + v2.normalized()).normalized() * distance;
+        Eigen::Vector3f vz(0.0f, 0.0f, offsetZ);
 
         // 计算向量内外方向
-        PointT t1(p.x, p.y, 0);
-        PointT t2(p.x + v[0], p.y + v[1], 0);
+        PointT t1(p.x, p.y, 0.0f);
+        PointT t2(p.x + v[0], p.y + v[1], 0.0f);
         float distance1 = pcl::geometry::squaredDistance(t1, center);
         float distance2 = pcl::geometry::squaredDistance(t2, center);
-        if (distance1 > distance2) {
+        if (distance1 > distance2)
+        {
             c->push_back(PointT(p.x + v[0], p.y + v[1], p.z + offsetZ));
-            Eigen::Vector3f normal = Eigen::Vector3f(v[0], v[1], offsetZ).normalized();
+            // 法线除XOY面外姿态固定
+            v = v.normalized();
+            Eigen::Vector3f v3(v[0], v[1], 0.0f);
+            Eigen::Vector3f normal = (v3.normalized() + vz.normalized()).normalized();
             n->push_back(pcl::Normal(normal[0], normal[1], normal[2]));
         }
-        else {
+        else
+        {
             c->push_back(PointT(p.x - v[0], p.y - v[1], p.z + offsetZ));
-            Eigen::Vector3f normal = Eigen::Vector3f(-v[0], -v[1], offsetZ).normalized();
+            // 法线除XOY面外姿态固定
+            v = v.normalized();
+            Eigen::Vector3f v3(-v[0], -v[1], 0.0f);
+            Eigen::Vector3f normal = (v3.normalized() + vz.normalized()).normalized();
             n->push_back(pcl::Normal(normal[0], normal[1], normal[2]));
         }
     }
